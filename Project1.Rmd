@@ -6,10 +6,11 @@ output: html_document
 ---
 ```{r setup, include = FALSE}
 #### Load necessary packages ####
-packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere")
+packages <- c("dplyr", "knitr", "kableExtra", "magrittr", "readr", "geosphere")
 install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(install_me)) install.packages(install_me)
 
+library(dplyr)
 library(knitr)
 library(kableExtra)
 library(magrittr)
@@ -121,13 +122,46 @@ print(paste("Highest Risk:", highestRisk[1], highestRisk[2], "| Confirmations:",
 
 #### Objective 5
 ```{r ob5}
+#### Make list of unique Countries
+countryList <- unique(confRisk[2])
 
+#### Make data frame structure with country list and blank spots for other data
+summedData <- data.frame("Country"=countryList, "Confirmations"=0, "Deaths"=0)
+
+#### Create subsets by country and populate Confirmations
+i <- 1
+
+for (i in 1:nrow(summedData))
+{
+  tempSubset <- subset(confRisk, confRisk$"Country/Region" == summedData$Country[i])
+
+  summedData$Confirmations[i] <- sum(tempSubset[latestDate], na.rm=TRUE)
+
+  i <- i + 1
+}
+
+#### Create subsets by country and populate Deaths
+i <- 1
+
+for (i in 1:nrow(summedData))
+{
+  tempSubset <- subset(deathsRisk, deathsRisk$"Country/Region" == summedData$Country[i])
+
+  summedData$Deaths[i] <- sum(tempSubset[latestDate], na.rm=TRUE)
+
+  i <- i + 1
+}
+
+topConfirmations <- slice_max(summedData, Confirmations, n = 5)
+topDeaths <- slice_max(summedData, Deaths, n = 5)
+
+kable(topConfirmations, align="lcc")
+
+kable(topDeaths, align="lcc")
 ```
 
-### GitHub Log
-```{bash gitlog} 
-git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
-```
+### GitHub Link
+https://github.com/jholscher1885/CSIT165-Project1
 
 
 
