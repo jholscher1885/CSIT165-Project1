@@ -45,7 +45,15 @@ Date fields are stored in MM/DD/YYYY format.
 
 ### Objective 1
 ```{r ob1}
-
+confOrigin <- confirmations[which.max(confirmations$"1/22/20"),]
+deathOrigin <- deaths[which.max(deaths$"1/22/20"),]
+if ((confOrigin$Lat == deathOrigin$Lat) && (confOrigin$Long == deathOrigin$Long)) {
+  print(paste("Predicted origin: Location with highest confirmations and deaths on 1/22/20"))
+  print(paste("Latitude:", confOrigin$Lat, "| Longitude:", confOrigin$Long))
+  print(paste("Country/Region:", confOrigin$"Country/Region", "| Province/State:", confOrigin$"Province/State"))
+} else {
+  print("There is not a location with both the highest confirmations and deaths.")
+}
 ```
 
 ### Objective 2
