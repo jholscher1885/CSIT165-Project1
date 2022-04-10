@@ -60,8 +60,27 @@ if ((confOrigin$Lat == deathOrigin$Lat) && (confOrigin$Long == deathOrigin$Long)
 
 ### Objective 2
 ```{r ob2}
+i <- 5
+confRecent <- (confirmations)
+
+#### Loops through each column and progressively subsets to keep only those rows which have not had any positive cases yet, and breaks the loop when the next subset would result in no data
+for (i in 5:length(confRecent))
+{
+  columnName <- names(confRecent)[i]
+
+  if(nrow(subset(confRecent, ((confRecent)[i]) == 0)) == 0)
+  {
+    break
+  } else {
+    confRecent <- subset(confRecent, ((confRecent)[i]) == 0) 
+  }
+
+  i <- i + 1
+}
 
 ```
+
+
 
 ### Objective 3
 ```{r ob3}
