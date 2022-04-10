@@ -77,25 +77,50 @@ for (i in 5:length(confRecent))
 
   i <- i + 1
 }
-
 ```
-
-
 
 ### Objective 3
 ```{r ob3}
+confOriginLoc <- c(confOrigin$Long, confOrigin$Lat)
+confRecentLoc <- c(confRecent$Long, confRecent$Lat)
 
+distanceMeters <- distm(confOriginLoc, confRecentLoc, distGeo)
+distanceMiles <- round(distanceMeters * 0.000621371, 2)
+
+print(paste(confRecent$"Province/State", confRecent$"Country/Region", "is", distanceMiles, "miles away from", confOrigin$"Province/State", confOrigin$"Country/Region"))
 ```
 
 ### Objective 4
+```{r ob4}
+confRisk <- subset(confirmations, !is.na(Lat))
+deathsRisk <- subset(deaths, !is.na(Lat))
 
-#### Objective 4.1
-```{r ob4.1}
+confRisk <- subset(confRisk, Lat != 0)
+deathsRisk <- subset(deathsRisk, Lat != 0)
 
+latestDate <- names(confRisk)[length(confRisk)]
+
+riskScore <- data.frame("Province/State"=confRisk$"Province/State", "Country/Region"=confRisk$"Country/Region", "Confirmations"=confRisk[latestDate], "Deaths"=deathsRisk[latestDate], "Risk Score"=0)
+
+riskScore[5] <- 100 * (riskScore[4] / riskScore[3])
+
+avgRisk <- colMeans(riskScore[5], na.rm=TRUE)
+
+lowRisk <- subset(riskScore, riskScore[5] == (min(riskScore[5], na.rm=TRUE)))
+highRisk <- subset(riskScore, riskScore[5] == (max(riskScore[5], na.rm=TRUE)))
+
+lowestRisk <- subset(lowRisk, lowRisk[3] == (max(lowRisk[3], na.rm=TRUE)))
+highestRisk <- subset(highRisk, highRisk[3] == (max(highRisk[3], na.rm=TRUE)))
+
+print(paste("Global Average Risk:", avgRisk))
+
+print(paste("Lowest Risk:",  lowestRisk[1], lowestRisk[2], "| Confirmations:", lowestRisk[3], "| Deaths:", lowestRisk[4], "| Risk:", round(lowestRisk[5], 2)))
+
+print(paste("Highest Risk:", highestRisk[1], highestRisk[2], "| Confirmations:", highestRisk[3], "| Deaths:", highestRisk[4], "| Risk:", round(highestRisk[5], 2)))
 ```
 
-#### Objective 4.2
-```{r ob4.2}
+#### Objective 5
+```{r ob5}
 
 ```
 
