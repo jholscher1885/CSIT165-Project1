@@ -5,9 +5,7 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 ```{r setup, include = FALSE}
-
 #### Load necessary packages ####
-
 packages <- c("knitr", "kableExtra", "magrittr", "readr", "geosphere")
 install_me <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(install_me)) install.packages(install_me)
@@ -18,6 +16,7 @@ library(magrittr)
 library(readr)
 library(geosphere)
 
+#### Pull data from files that were obtained with wget
 confirmationsURL <- "time_series_covid19_confirmed_global.csv"
 confirmations <- read_delim(file=confirmationsURL, delim=",")
 
@@ -45,8 +44,11 @@ Date fields are stored in MM/DD/YYYY format.
 
 ### Objective 1
 ```{r ob1}
+#### Create variables for highest confirmation and highest deaths on 1/22/20
 confOrigin <- confirmations[which.max(confirmations$"1/22/20"),]
 deathOrigin <- deaths[which.max(deaths$"1/22/20"),]
+
+#### Display location with both highest confirmations and deaths, if none qualify display a different message
 if ((confOrigin$Lat == deathOrigin$Lat) && (confOrigin$Long == deathOrigin$Long)) {
   print(paste("Predicted origin: Location with highest confirmations and deaths on 1/22/20"))
   print(paste("Latitude:", confOrigin$Lat, "| Longitude:", confOrigin$Long))
