@@ -1,6 +1,6 @@
 ---
-title: "Project1"
-author: "Jeanine Holscher \n and Andy Lopez"
+title: "CSIT165-Project1"
+author: "Jeanine Holscher and Andy Lopez"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -23,6 +23,16 @@ confirmations <- read_delim(file=confirmationsURL, delim=",")
 
 deathsURL <- "time_series_covid19_deaths_global.csv"
 deaths <- read_delim(file=deathsURL, delim=",")
+
+#### Find the last day listed in Confirmations for future use
+latestDate <- names(confirmations)[length(confirmations)]
+
+#### Create new variables from subsets of confirmations and deaths to remove locations with NA or 0 for Latitude for future use 
+confClean <- subset(confirmations, !is.na(Lat))
+deathsClean <- subset(deaths, !is.na(Lat))
+
+confClean <- subset(confClean, Lat != 0)
+deathsClean <- subset(deathsClean, Lat != 0)
 ```
 
 ## Background
@@ -51,7 +61,7 @@ deathOrigin <- deaths[which.max(deaths$"1/22/20"),]
 
 #### Display location with both highest confirmations and deaths, if none qualify display a different message
 if ((confOrigin$Lat == deathOrigin$Lat) && (confOrigin$Long == deathOrigin$Long)) {
-  print(paste("Predicted origin: Location with highest confirmations and deaths on 1/22/20"))
+  print(paste("Predicted origin (Location with highest confirmations and deaths on 1/22/20)"))
   print(paste("Latitude:", confOrigin$Lat, "| Longitude:", confOrigin$Long))
   print(paste("Country/Region:", confOrigin$"Country/Region", "| Province/State:", confOrigin$"Province/State"))
 } else {
@@ -61,69 +71,79 @@ if ((confOrigin$Lat == deathOrigin$Lat) && (confOrigin$Long == deathOrigin$Long)
 
 ### Objective 2
 ```{r ob2}
+#### Initialize counter variable and copy confirmations to use in subsetting
 i <- 5
 confRecent <- (confirmations)
 
-#### Loops through each column and progressively subsets to keep only those rows which have not had any positive cases yet, and breaks the loop when the next subset would result in no data
+#### Since we are only counting areas that have wound up with at least one case, subset to remove those who ended at 0 confirmed cases at the last listed date in confirmations
+confRecent <- subset(confRecent, ((confRecent)[latestDate]) != 0)
+
+#### Loops through each column and progressively subsets to keep only those rows which are still at 0 confirmations, and breaks the loop when the next subset would result in no data
 for (i in 5:length(confRecent))
 {
-  columnName <- names(confRecent)[i]
-
   if(nrow(subset(confRecent, ((confRecent)[i]) == 0)) == 0)
   {
     break
   } else {
     confRecent <- subset(confRecent, ((confRecent)[i]) == 0) 
+    recentDate <- names(confRecent)[i+1]
   }
 
   i <- i + 1
 }
+
+#### Displays info for most recent area to have a first confirmed case
+print(paste("Most recent area to have a first confirmed case"))
+print(paste("Latitude:", confRecent$Lat, "| Longitude:", confRecent$Long))
+print(paste("Country/Region:", confRecent$"Country/Region", "| Province/State:", confRecent$"Province/State"))
+print(paste("First confirmed case:", recentDate))
 ```
 
 ### Objective 3
 ```{r ob3}
+#### Create variables to hold both the Longitude and Latitude of the origin and recent locations
 confOriginLoc <- c(confOrigin$Long, confOrigin$Lat)
 confRecentLoc <- c(confRecent$Long, confRecent$Lat)
 
+#### Use distm to find the distance in meters between the two locations and then convert to miles
 distanceMeters <- distm(confOriginLoc, confRecentLoc, distGeo)
 distanceMiles <- round(distanceMeters * 0.000621371, 2)
 
+#### Display the distance in miles between the two locations
 print(paste(confRecent$"Province/State", confRecent$"Country/Region", "is", distanceMiles, "miles away from", confOrigin$"Province/State", confOrigin$"Country/Region"))
 ```
 
 ### Objective 4
 ```{r ob4}
-confRisk <- subset(confirmations, !is.na(Lat))
-deathsRisk <- subset(deaths, !is.na(Lat))
+#### Create new data frame from subset of cleaned confirmations and deaths(without locations with NA or 0 for Latitude)
+riskScore <- data.frame("Province/State"=confClean$"Province/State", "Country/Region"=confClean$"Country/Region", "Confirmations"=confClean[latestDate], "Deaths"=deathsClean[latestDate], "Risk Score"=0)
 
-confRisk <- subset(confRisk, Lat != 0)
-deathsRisk <- subset(deathsRisk, Lat != 0)
-
-latestDate <- names(confRisk)[length(confRisk)]
-
-riskScore <- data.frame("Province/State"=confRisk$"Province/State", "Country/Region"=confRisk$"Country/Region", "Confirmations"=confRisk[latestDate], "Deaths"=deathsRisk[latestDate], "Risk Score"=0)
-
+#### Calculate and populate Risk Score field
 riskScore[5] <- 100 * (riskScore[4] / riskScore[3])
 
+#### Use colMeans to find the average global risk
 avgRisk <- colMeans(riskScore[5], na.rm=TRUE)
 
-lowRisk <- subset(riskScore, riskScore[5] == (min(riskScore[5], na.rm=TRUE)))
-highRisk <- subset(riskScore, riskScore[5] == (max(riskScore[5], na.rm=TRUE)))
+#### Subset to find all instances of the lowest and highest risk scores 
+lowestRisk <- subset(riskScore, riskScore[5] == (min(riskScore[5], na.rm=TRUE)))
+highestRisk <- subset(riskScore, riskScore[5] == (max(riskScore[5], na.rm=TRUE)))
 
-lowestRisk <- subset(lowRisk, lowRisk[3] == (max(lowRisk[3], na.rm=TRUE)))
-highestRisk <- subset(highRisk, highRisk[3] == (max(highRisk[3], na.rm=TRUE)))
+#### Subset again to keep only the lowest risk and highest risk that have the highest confirmations
+lowestRisk <- subset(lowestRisk, lowestRisk[3] == (max(lowestRisk[3], na.rm=TRUE)))
+highestRisk <- subset(highestRisk, highestRisk[3] == (max(highestRisk[3], na.rm=TRUE)))
 
+#### Display the Global Average risk and info for both lowest and highest risk locations
 print(paste("Global Average Risk:", avgRisk))
-
 print(paste("Lowest Risk:",  lowestRisk[1], lowestRisk[2], "| Confirmations:", lowestRisk[3], "| Deaths:", lowestRisk[4], "| Risk:", round(lowestRisk[5], 2)))
-
 print(paste("Highest Risk:", highestRisk[1], highestRisk[2], "| Confirmations:", highestRisk[3], "| Deaths:", highestRisk[4], "| Risk:", round(highestRisk[5], 2)))
 ```
 
+It might be helpful to calculate risk scores for different areas of the world to be able to assess things like the need for more Covid restrictions / mitigation strategies, travel risks, and need for more testing supplies or health care support. Risk scores assume that people are consistently testing (which also assumes equal access and inclination to testing) and reporting positive tests. They also assume accurate and properly documented reporting of deaths and cause of death. Since this risk score is only taking total confirmations and deaths into account, it is not necessarily representing the current situation accurately - a country could have very few Covid cases currently, but the risk score calculated from the total data could still be very high due to earlier surges.
+
 #### Objective 5
 ```{r ob5}
-#### Make list of unique Countries
-countryList <- unique(confRisk[2])
+#### Make list of unique Countries from cleaned confirmations(without locations with NA or 0 for Latitude)
+countryList <- unique(confClean[2])
 
 #### Make data frame structure with country list and blank spots for other data
 summedData <- data.frame("Country"=countryList, "Confirmations"=0, "Deaths"=0)
@@ -133,7 +153,7 @@ i <- 1
 
 for (i in 1:nrow(summedData))
 {
-  tempSubset <- subset(confRisk, confRisk$"Country/Region" == summedData$Country[i])
+  tempSubset <- subset(confClean, confClean$"Country/Region" == summedData$Country[i])
 
   summedData$Confirmations[i] <- sum(tempSubset[latestDate], na.rm=TRUE)
 
@@ -145,23 +165,35 @@ i <- 1
 
 for (i in 1:nrow(summedData))
 {
-  tempSubset <- subset(deathsRisk, deathsRisk$"Country/Region" == summedData$Country[i])
+  tempSubset <- subset(deathsClean, deathsClean$"Country/Region" == summedData$Country[i])
 
   summedData$Deaths[i] <- sum(tempSubset[latestDate], na.rm=TRUE)
 
   i <- i + 1
 }
 
+#### Slice to show only the top five countries for Confirmations and Deaths
 topConfirmations <- slice_max(summedData, Confirmations, n = 5)
 topDeaths <- slice_max(summedData, Deaths, n = 5)
 
-kable(topConfirmations, align="lcc")
-
-kable(topDeaths, align="lcc")
+### Use kable to show both top five tables
+knitr::kable(
+  topConfirmations,
+  "pipe",
+  col.names = c("Country", "Confirmations", "Deaths"),
+  caption = paste("Countries with Highest Confirmations (as of ", latestDate, ")")
+)
+knitr::kable(
+  topDeaths,
+  "pipe",
+  col.names = c("Country", "Confirmations", "Deaths"),
+  caption = paste("Countries with Highest Deaths (as of ", latestDate, ")")
+)
 ```
 
 ### GitHub Link
-https://github.com/jholscher1885/CSIT165-Project1
+
+[Link to Project in GitHub](https://github.com/jholscher1885/CSIT165-Project1)
 
 
 
