@@ -140,7 +140,7 @@ print(paste("Highest Risk:", highestRisk[1], highestRisk[2], "| Confirmations:",
 
 It might be helpful to calculate risk scores for different areas of the world to be able to assess things like the need for more Covid restrictions / mitigation strategies, travel risks, and need for more testing supplies or health care support. Risk scores assume that people are consistently testing (which also assumes equal access and inclination to testing) and reporting positive tests. They also assume accurate and properly documented reporting of deaths and cause of death. Since this risk score is only taking total confirmations and deaths into account, it is not necessarily representing the current situation accurately - a country could have very few Covid cases currently, but the risk score calculated from the total data could still be very high due to earlier surges.
 
-#### Objective 5
+### Objective 5
 ```{r ob5}
 #### Make list of unique Countries from cleaned confirmations(without locations with NA or 0 for Latitude)
 countryList <- unique(confClean[2])
